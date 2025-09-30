@@ -7,12 +7,12 @@ export interface ExportMetadata {
 }
 
 export interface ExportDataHook {
-  getData: () => any[];
+  getData: () => Record<string, unknown>[];
   getMetadata: () => ExportMetadata;
 }
 
 export function exportDataAsCSV(
-  data: any[],
+  data: Record<string, unknown>[],
   filename: string,
   metadata?: ExportMetadata
 ): void {
@@ -67,14 +67,14 @@ export function exportDataAsCSV(
   URL.revokeObjectURL(url);
 }
 
-function inferColumnsFromData(data: any[]): string[] {
+function inferColumnsFromData(data: Record<string, unknown>[]): string[] {
   if (!data || data.length === 0) return [];
 
   const firstRow = data[0];
   return Object.keys(firstRow);
 }
 
-function escapeCSVValue(value: any): string {
+function escapeCSVValue(value: unknown): string {
   if (value === null || value === undefined) {
     return '';
   }

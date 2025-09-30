@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,12 +14,12 @@ export interface TimeSeriesDataPoint {
   permit_year: string;
   county: string;
   well_count: number;
-  [key: string]: any; // Allow additional fields (total_emissions, total_oil_production, etc.)
+  [key: string]: string | number; // Allow additional fields (total_emissions, total_oil_production, etc.)
 }
 
-export interface AggregatedDataPoint {
+export interface AggregatedDataPoint extends Record<string, unknown> {
   year: string;
-  [key: string]: any; // The main value field will be dynamic
+  [key: string]: string | number; // The main value field will be dynamic
 }
 
 export type CalculationMethod = 'permit_year' | 'constant' | 'exponential_decay';
@@ -98,7 +98,7 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
     const currentYear = getCurrentYear();
     const startYear = Math.max(1995, permitYear);
     const yearlyValues: { [year: number]: number } = {};
-    const totalValue = item[config.valueKey];
+    const totalValue = item[config.valueKey] as number;
 
     switch (method) {
       case 'permit_year':
@@ -161,7 +161,7 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
 
   // Get top counties for detailed view
   const countyTotals = filteredData.reduce((acc: { [key: string]: number }, item) => {
-    acc[item.county] = (acc[item.county] || 0) + item[config.valueKey];
+    acc[item.county] = (acc[item.county] || 0) + (item[config.valueKey] as number);
     return acc;
   }, {});
 
@@ -172,7 +172,7 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
 
   // Create county-specific chart data
   const countyChartData = chartData.map(yearData => {
-    const countyData: any = { year: yearData.year };
+    const countyData: Record<string, string | number> = { year: yearData.year };
     topCounties.forEach(county => {
       const countyFilteredData = filteredData.filter(item => item.county === county);
       const countyValue = countyFilteredData.reduce((sum, item) => {

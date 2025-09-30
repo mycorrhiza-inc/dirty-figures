@@ -167,7 +167,7 @@ export function getCounties(): string[] {
   const database = getDatabase();
   const query = `SELECT DISTINCT county FROM wells WHERE county IS NOT NULL ORDER BY county`;
 
-  return database.prepare(query).all().map((row: any) => row.county);
+  return (database.prepare(query).all() as { county: string }[]).map(row => row.county);
 }
 
 // Helper function to fill missing years with zero data
@@ -189,7 +189,7 @@ export function fillMissingYears<T extends { year: string }>(
       // Create zero-filled entry for missing year
       const counties = getCounties();
       for (const county of counties) {
-        const zeroEntry = { year: yearStr, county, ...fillFields } as T;
+        const zeroEntry = { year: yearStr, county, ...fillFields } as unknown as T;
         filledData.push(zeroEntry);
       }
     }

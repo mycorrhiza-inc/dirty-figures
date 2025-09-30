@@ -90,7 +90,7 @@ function HeatmapLayer({ wells, onStatsUpdate }: { wells: WellMapData[], onStatsU
     });
 
     // Create heatmap layer with more visible settings
-    const heatmapLayer = (L as any).heatLayer(heatmapData, {
+    const heatmapLayer = (L as typeof L & { heatLayer: (data: [number, number, number][], options: Record<string, unknown>) => L.Layer }).heatLayer(heatmapData, {
       radius: 35,           // Larger radius for more visibility
       blur: 5,              // Less blur for sharper definition
       maxZoom: 17,

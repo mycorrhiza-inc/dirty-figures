@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExportableChart } from '@/components/ExportableChart';
@@ -12,7 +12,7 @@ interface PermitsByYearData {
   county: string;
 }
 
-interface AggregatedData {
+interface AggregatedData extends Record<string, unknown> {
   year: string;
   total_permits: number;
 }
@@ -78,7 +78,7 @@ export function PermitsByYearChart({ selectedCounties }: PermitsByYearChartProps
 
   // Create county-specific chart data
   const countyChartData = chartData.map(yearData => {
-    const countyData: any = { year: yearData.year };
+    const countyData: Record<string, string | number> = { year: yearData.year };
     topCounties.forEach(county => {
       const countyItem = filteredData.find(item => item.year === yearData.year && item.county === county);
       countyData[county] = countyItem ? countyItem.permit_count : 0;
