@@ -7,6 +7,9 @@ import { EmissionsByYearChart } from '@/components/EmissionsByYearChart';
 import { PermitsVsShutdownsChart } from '@/components/PermitsVsShutdownsChart';
 import { OilProductionByYearChart } from '@/components/OilProductionByYearChart';
 import { GasProductionByYearChart } from '@/components/GasProductionByYearChart';
+import { EmissionsByCountyPieChart } from '@/components/EmissionsByCountyPieChart';
+import { OilProductionByCountyPieChart } from '@/components/OilProductionByCountyPieChart';
+import { GasProductionByCountyPieChart } from '@/components/GasProductionByCountyPieChart';
 import { CountyFilter } from '@/components/CountyFilter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -90,6 +93,44 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <GasProductionByYearChart selectedCounties={selectedCounties} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Emissions by County</CardTitle>
+              <CardDescription>
+                Breakdown of total carbon emissions by county. Shows the top 10 counties by emission volume.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmissionsByCountyPieChart selectedCounties={selectedCounties} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Oil Production by County</CardTitle>
+              <CardDescription>
+                Breakdown of total oil production by county. Shows the top 10 counties by production volume.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <OilProductionByCountyPieChart selectedCounties={selectedCounties} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Gas Production by County</CardTitle>
+              <CardDescription>
+                Breakdown of total natural gas production by county. Shows the top 10 counties by production volume.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GasProductionByCountyPieChart selectedCounties={selectedCounties} />
             </CardContent>
           </Card>
         </div>
