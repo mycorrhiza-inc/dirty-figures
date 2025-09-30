@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { ExportableChart } from '@/components/ExportableChart';
 import { createExportMetadata } from '@/utils/csvExport';
+import { TimeSeriesDataPoint } from '@/components/TimeSeriesChart';
 
 export interface PieChartDataPoint {
   county: string;
@@ -27,13 +28,13 @@ interface PieChartProps {
 }
 
 export function PieChartComponent({ selectedCounties, config }: PieChartProps) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<TimeSeriesDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch(config.apiEndpoint)
       .then(res => res.json())
-      .then((rawData: any[]) => {
+      .then((rawData: TimeSeriesDataPoint[]) => {
         setData(rawData);
         setLoading(false);
       })
@@ -78,9 +79,9 @@ export function PieChartComponent({ selectedCounties, config }: PieChartProps) {
   }));
 
   const RADIAN = Math.PI / 180;
-  const renderCustomizedLabel = ({
-    cx, cy, midAngle, innerRadius, outerRadius, percent, index
-  }: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderCustomizedLabel = (props: any) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
