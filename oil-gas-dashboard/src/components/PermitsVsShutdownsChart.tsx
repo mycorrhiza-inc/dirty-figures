@@ -5,16 +5,17 @@ import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Respons
 
 interface PermitsVsShutdownsData {
   year: string;
-  new_permits: number;
-  shutdowns: number;
+  total_permits: number;
+  shutdown_count: number;
+  shutdown_percentage: number;
   county: string;
 }
 
 interface ChartData {
   year: string;
-  new_permits: number;
-  shutdowns: number;
-  net_change: number;
+  total_permits: number;
+  shutdown_count: number;
+  shutdown_percentage: number;
 }
 
 interface PermitsVsShutdownsChartProps {
@@ -30,7 +31,7 @@ export function PermitsVsShutdownsChart({ selectedCounties }: PermitsVsShutdowns
       .then(res => res.json())
       .then((rawData: PermitsVsShutdownsData[]) => {
         // Group by year and aggregate
-        const yearlyData: { [year: string]: { new_permits: number; shutdowns: number } } = {};
+        const yearlyData: { [year: string]: { total_permits: number; shutdown_count: number; total_shutdown_weighted: number } } = {};
 
         rawData.forEach(item => {
           // Filter by selected counties if any
@@ -39,29 +40,38 @@ export function PermitsVsShutdownsChart({ selectedCounties }: PermitsVsShutdowns
           }
 
           if (!yearlyData[item.year]) {
-            yearlyData[item.year] = { new_permits: 0, shutdowns: 0 };
+            yearlyData[item.year] = { total_permits: 0, shutdown_count: 0, total_shutdown_weighted: 0 };
           }
-          yearlyData[item.year].new_permits += item.new_permits;
-          yearlyData[item.year].shutdowns += item.shutdowns;
+          yearlyData[item.year].total_permits += item.total_permits;
+          yearlyData[item.year].shutdown_count += item.shutdown_count;
+          // Weight the percentage by the number of permits for proper averaging
+          yearlyData[item.year].total_shutdown_weighted += item.shutdown_percentage * item.total_permits;
         });
 
         // Ensure we have data for all years from 1995 to current year
         const currentYear = new Date().getFullYear();
-        const allYearsData: { [year: string]: { new_permits: number; shutdowns: number } } = {};
+        const allYearsData: { [year: string]: { total_permits: number; shutdown_count: number; total_shutdown_weighted: number } } = {};
         for (let year = 1995; year <= currentYear; year++) {
           const yearStr = year.toString();
-          allYearsData[yearStr] = yearlyData[yearStr] || { new_permits: 0, shutdowns: 0 };
+          allYearsData[yearStr] = yearlyData[yearStr] || { total_permits: 0, shutdown_count: 0, total_shutdown_weighted: 0 };
         }
 
         // Convert to chart format
         const chartData: ChartData[] = Object.keys(allYearsData)
           .sort()
-          .map(year => ({
-            year,
-            new_permits: allYearsData[year].new_permits,
-            shutdowns: allYearsData[year].shutdowns,
-            net_change: allYearsData[year].new_permits - allYearsData[year].shutdowns
-          }));
+          .map(year => {
+            const data = allYearsData[year];
+            const shutdown_percentage = data.total_permits > 0
+              ? Math.round((data.total_shutdown_weighted / data.total_permits) * 10) / 10
+              : 0;
+
+            return {
+              year,
+              total_permits: data.total_permits,
+              shutdown_count: data.shutdown_count,
+              shutdown_percentage
+            };
+          });
 
         setData(chartData);
         setLoading(false);
@@ -82,25 +92,36 @@ export function PermitsVsShutdownsChart({ selectedCounties }: PermitsVsShutdowns
         <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="year" />
-          <YAxis />
-          <Tooltip />
+          <YAxis yAxisId="left" />
+          <YAxis yAxisId="right" orientation="right" domain={[0, 100]} />
+          <Tooltip
+            formatter={(value, name) => {
+              if (name === 'Shutdown Percentage') {
+                return [`${value}%`, name];
+              }
+              return [value, name];
+            }}
+          />
           <Legend />
           <Bar
-            dataKey="new_permits"
+            yAxisId="left"
+            dataKey="total_permits"
             fill="#82ca9d"
-            name="New Permits"
+            name="Total Permits"
           />
           <Bar
-            dataKey="shutdowns"
-            fill="#ff7300"
-            name="Shutdowns"
+            yAxisId="left"
+            dataKey="shutdown_count"
+            fill="#ff4444"
+            name="Shutdown Wells"
           />
           <Line
+            yAxisId="right"
             type="monotone"
-            dataKey="net_change"
-            stroke="#8884d8"
+            dataKey="shutdown_percentage"
+            stroke="#ff7300"
             strokeWidth={3}
-            name="Net Change"
+            name="Shutdown Percentage"
           />
         </ComposedChart>
       </ResponsiveContainer>

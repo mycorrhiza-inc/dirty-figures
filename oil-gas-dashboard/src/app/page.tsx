@@ -10,6 +10,7 @@ import { GasProductionByYearChart } from '@/components/GasProductionByYearChart'
 import { EmissionsByCountyPieChart } from '@/components/EmissionsByCountyPieChart';
 import { OilProductionByCountyPieChart } from '@/components/OilProductionByCountyPieChart';
 import { GasProductionByCountyPieChart } from '@/components/GasProductionByCountyPieChart';
+import { WellTypesChart } from '@/components/WellTypesChart';
 import { CountyFilter } from '@/components/CountyFilter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -137,6 +138,18 @@ export default function Dashboard() {
 
         <Card className="mb-8">
           <CardHeader>
+            <CardTitle>Well Status Distribution</CardTitle>
+            <CardDescription>
+              Distribution of all wells by their current operational status, showing the lifecycle and current state of drilling operations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WellTypesChart />
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
             <CardTitle>Utah Wells Map & Emission Density</CardTitle>
             <CardDescription>
               Interactive map with two views: individual wells (circle size = emissions) and emission density heatmap showing pollution concentration per geographic area.
@@ -151,9 +164,9 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Permits vs Shutdowns</CardTitle>
+            <CardTitle>Permits vs Shutdowns by Year</CardTitle>
             <CardDescription>
-              Comparison of new permits granted versus wells transitioning to shutdown status.
+              Shows total permits issued per year (green bars), wells from that year currently shut down (red bars), and shutdown percentage (orange line). This reveals the lifecycle of wells by their permit year.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -35,9 +35,15 @@ export interface WellMapData {
 
 export interface PermitsVsShutdownsData {
   year: string;
-  new_permits: number;
-  shutdowns: number;
+  total_permits: number;
+  shutdown_count: number;
+  shutdown_percentage: number;
   county: string;
+}
+
+export interface WellTypeData {
+  well_type: string;
+  count: number;
 }
 
 export interface OilProductionByYearData {
@@ -114,8 +120,12 @@ export function getPermitsVsShutdowns(): PermitsVsShutdownsData[] {
   const query = `
     SELECT
       STRFTIME('%Y', date_approved) as year,
-      COUNT(CASE WHEN current_status = 'APPROVED' THEN 1 END) as new_permits,
-      COUNT(CASE WHEN current_status IN ('SHUT IN', 'PLUGGED', 'ABANDONED') THEN 1 END) as shutdowns,
+      COUNT(*) as total_permits,
+      COUNT(CASE WHEN current_status IN ('Shut-in', 'Plugged & Abandoned', 'Location Abandoned - APD rescinded', 'Temporarily-abandoned', 'APD Cancelled - Deepen/Re-enter existing well') THEN 1 END) as shutdown_count,
+      ROUND(
+        (COUNT(CASE WHEN current_status IN ('Shut-in', 'Plugged & Abandoned', 'Location Abandoned - APD rescinded', 'Temporarily-abandoned', 'APD Cancelled - Deepen/Re-enter existing well') THEN 1 END) * 100.0) / COUNT(*),
+        1
+      ) as shutdown_percentage,
       county
     FROM application_for_permit_drilling_granted
     WHERE date_approved IS NOT NULL
@@ -124,7 +134,21 @@ export function getPermitsVsShutdowns(): PermitsVsShutdownsData[] {
   `;
 
   const rawData = database.prepare(query).all() as PermitsVsShutdownsData[];
-  return fillMissingYears(rawData, 1995, new Date().getFullYear(), { new_permits: 0, shutdowns: 0 });
+  return fillMissingYears(rawData, 1995, new Date().getFullYear(), { total_permits: 0, shutdown_count: 0, shutdown_percentage: 0 });
+}
+
+export function getWellTypes(): WellTypeData[] {
+  const database = getDatabase();
+  const query = `
+    SELECT
+      COALESCE(current_status, 'Unknown') as well_type,
+      COUNT(*) as count
+    FROM application_for_permit_drilling_granted
+    GROUP BY current_status
+    ORDER BY count DESC
+  `;
+
+  return database.prepare(query).all() as WellTypeData[];
 }
 
 export function getOilProductionByPermitYear(): OilProductionByYearData[] {
