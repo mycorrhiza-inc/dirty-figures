@@ -46,10 +46,6 @@ export function WellTypesChart() {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
   }
 
-  const renderCustomizedLabel = (entry: ChartData) => {
-    return `${entry.percentage}%`;
-  };
-
   return (
     <div style={{ width: '100%', height: '400px' }}>
       <ResponsiveContainer>
@@ -58,8 +54,6 @@ export function WellTypesChart() {
             data={data}
             cx="50%"
             cy="50%"
-            labelLine={false}
-            label={renderCustomizedLabel}
             outerRadius={120}
             fill="#8884d8"
             dataKey="count"
@@ -74,9 +68,7 @@ export function WellTypesChart() {
               props.payload.well_type
             ]}
           />
-          <Legend
-            formatter={(value, entry) => `${entry.payload.well_type} (${entry.payload.count})`}
-          />
+          <Legend />
         </PieChart>
       </ResponsiveContainer>
     </div>
