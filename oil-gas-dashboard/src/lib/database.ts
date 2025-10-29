@@ -98,7 +98,7 @@ export function getPermitsByYear(surfaceOwnership?: string | null): PermitsByYea
     WHERE apd.date_approved IS NOT NULL
   `;
 
-  const params: any[] = [];
+  const params: string[] = [];
   if (surfaceOwnership) {
     query += ` AND w.surface_ownership = ?`;
     params.push(surfaceOwnership);
@@ -127,7 +127,7 @@ export function getEmissionsByPermitYear(surfaceOwnership?: string | null): Emis
     WHERE apd.date_approved IS NOT NULL AND w.total_carbon_emissions IS NOT NULL
   `;
 
-  const params: any[] = [];
+  const params: string[] = [];
   if (surfaceOwnership) {
     query += ` AND w.surface_ownership = ?`;
     params.push(surfaceOwnership);

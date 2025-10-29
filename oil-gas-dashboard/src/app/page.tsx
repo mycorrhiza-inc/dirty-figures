@@ -13,8 +13,6 @@ import { GasProductionByCountyPieChart } from "@/components/GasProductionByCount
 import { WellTypesChart } from "@/components/WellTypesChart";
 import { CountyFilter } from "@/components/CountyFilter";
 import { PermitsSinceDateChart } from "@/components/PermitsSinceDateChart";
-import { TopProducersChart } from "@/components/TopProducersChart";
-import { StateLandPermitsChart } from "@/components/StateLandPermitsChart";
 import {
   Card,
   CardContent,
