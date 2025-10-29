@@ -85,26 +85,38 @@ export interface StateLandPermitData {
   county: string;
 }
 
-export function getPermitsByYear(): PermitsByYearData[] {
+export function getPermitsByYear(surfaceOwnership?: string | null): PermitsByYearData[] {
   const database = getDatabase();
-  const query = `
+
+  let query = `
     SELECT
-      STRFTIME('%Y', date_approved) as year,
+      STRFTIME('%Y', apd.date_approved) as year,
       COUNT(*) as permit_count,
-      county
-    FROM application_for_permit_drilling_granted
-    WHERE date_approved IS NOT NULL
-    GROUP BY STRFTIME('%Y', date_approved), county
+      w.county
+    FROM application_for_permit_drilling_granted apd
+    LEFT JOIN wells w ON apd.api_number = w.api_well_number
+    WHERE apd.date_approved IS NOT NULL
+  `;
+
+  const params: any[] = [];
+  if (surfaceOwnership) {
+    query += ` AND w.surface_ownership = ?`;
+    params.push(surfaceOwnership);
+  }
+
+  query += `
+    GROUP BY STRFTIME('%Y', apd.date_approved), w.county
     ORDER BY year
   `;
 
-  const rawData = database.prepare(query).all() as PermitsByYearData[];
+  const rawData = database.prepare(query).all(...params) as PermitsByYearData[];
   return fillMissingYears(rawData, 1995, new Date().getFullYear(), { permit_count: 0 });
 }
 
-export function getEmissionsByPermitYear(): EmissionsByYearData[] {
+export function getEmissionsByPermitYear(surfaceOwnership?: string | null): EmissionsByYearData[] {
   const database = getDatabase();
-  const query = `
+
+  let query = `
     SELECT
       STRFTIME('%Y', apd.date_approved) as permit_year,
       w.county,
@@ -113,11 +125,20 @@ export function getEmissionsByPermitYear(): EmissionsByYearData[] {
     FROM wells w
     JOIN application_for_permit_drilling_granted apd ON w.api_well_number = apd.api_number
     WHERE apd.date_approved IS NOT NULL AND w.total_carbon_emissions IS NOT NULL
+  `;
+
+  const params: any[] = [];
+  if (surfaceOwnership) {
+    query += ` AND w.surface_ownership = ?`;
+    params.push(surfaceOwnership);
+  }
+
+  query += `
     GROUP BY STRFTIME('%Y', apd.date_approved), w.county
     ORDER BY permit_year
   `;
 
-  return database.prepare(query).all() as EmissionsByYearData[];
+  return database.prepare(query).all(...params) as EmissionsByYearData[];
 }
 
 export function getWellsMapData(): WellMapData[] {

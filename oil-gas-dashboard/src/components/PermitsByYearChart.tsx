@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { YearRangeSelector } from '@/components/YearRangeSelector';
+import { SurfaceOwnershipFilter, SurfaceOwnership } from '@/components/SurfaceOwnershipFilter';
 import { ExportableChart } from '@/components/ExportableChart';
 import { createExportMetadata } from '@/utils/csvExport';
 
@@ -28,9 +29,15 @@ export function PermitsByYearChart({ selectedCounties }: PermitsByYearChartProps
   const [activeTab, setActiveTab] = useState('total');
   const [startYear, setStartYear] = useState('1996');
   const [endYear, setEndYear] = useState(new Date().getFullYear().toString());
+  const [surfaceOwnership, setSurfaceOwnership] = useState<SurfaceOwnership>('All');
 
   useEffect(() => {
-    fetch('/api/permits-by-year')
+    const params = new URLSearchParams();
+    if (surfaceOwnership !== 'All') {
+      params.append('surfaceOwnership', surfaceOwnership);
+    }
+
+    fetch(`/api/permits-by-year?${params.toString()}`)
       .then(res => res.json())
       .then((rawData: PermitsByYearData[]) => {
         setData(rawData);
@@ -40,7 +47,7 @@ export function PermitsByYearChart({ selectedCounties }: PermitsByYearChartProps
         console.error('Error fetching permits data:', error);
         setLoading(false);
       });
-  }, []);
+  }, [surfaceOwnership]);
 
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
@@ -94,13 +101,19 @@ export function PermitsByYearChart({ selectedCounties }: PermitsByYearChartProps
 
   return (
     <div className="w-full space-y-4">
-      {/* Year Range Selectors */}
-      <YearRangeSelector
-        startYear={startYear}
-        endYear={endYear}
-        onStartYearChange={setStartYear}
-        onEndYearChange={setEndYear}
-      />
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4">
+        <YearRangeSelector
+          startYear={startYear}
+          endYear={endYear}
+          onStartYearChange={setStartYear}
+          onEndYearChange={setEndYear}
+        />
+        <SurfaceOwnershipFilter
+          value={surfaceOwnership}
+          onValueChange={setSurfaceOwnership}
+        />
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">

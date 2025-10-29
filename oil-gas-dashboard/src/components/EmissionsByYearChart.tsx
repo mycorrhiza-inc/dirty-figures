@@ -19,7 +19,8 @@ export function EmissionsByYearChart({ selectedCounties }: EmissionsByYearChartP
     tooltipLabel: 'Total Emissions',
     divideBy: 1000,
     primaryColor: '#3b82f6',
-    gradientId: 'emissionsGradient'
+    gradientId: 'emissionsGradient',
+    supportsSurfaceOwnership: true
   };
 
   return <TimeSeriesChart selectedCounties={selectedCounties} config={config} />;

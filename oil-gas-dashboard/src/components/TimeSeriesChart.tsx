@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { YearRangeSelector } from '@/components/YearRangeSelector';
+import { SurfaceOwnershipFilter, SurfaceOwnership } from '@/components/SurfaceOwnershipFilter';
 import { ExportableChart } from '@/components/ExportableChart';
 import { createExportMetadata } from '@/utils/csvExport';
 
@@ -45,6 +46,9 @@ export interface TimeSeriesConfig {
   // Colors
   primaryColor: string;
   gradientId: string;
+
+  // Surface ownership support
+  supportsSurfaceOwnership?: boolean; // Whether this endpoint supports surface ownership filtering
 }
 
 interface TimeSeriesChartProps {
@@ -62,9 +66,17 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
   const [activeTab, setActiveTab] = useState('total');
   const [startYear, setStartYear] = useState('1996');
   const [endYear, setEndYear] = useState(new Date().getFullYear().toString());
+  const [surfaceOwnership, setSurfaceOwnership] = useState<SurfaceOwnership>('All');
 
   useEffect(() => {
-    fetch(config.apiEndpoint)
+    const params = new URLSearchParams();
+    if (config.supportsSurfaceOwnership && surfaceOwnership !== 'All') {
+      params.append('surfaceOwnership', surfaceOwnership);
+    }
+
+    const url = `${config.apiEndpoint}?${params.toString()}`;
+
+    fetch(url)
       .then(res => res.json())
       .then((rawData: TimeSeriesDataPoint[]) => {
         setData(rawData);
@@ -74,7 +86,7 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
         console.error(`Error fetching ${config.title.toLowerCase()} data:`, error);
         setLoading(false);
       });
-  }, [config.apiEndpoint, config.title]);
+  }, [config.apiEndpoint, config.title, config.supportsSurfaceOwnership, surfaceOwnership]);
 
   // Helper functions for calculations
   const getCurrentYear = () => new Date().getFullYear();
@@ -199,13 +211,21 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
 
   return (
     <div className="w-full space-y-4">
-      {/* Year Range Selectors */}
-      <YearRangeSelector
-        startYear={startYear}
-        endYear={endYear}
-        onStartYearChange={setStartYear}
-        onEndYearChange={setEndYear}
-      />
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4">
+        <YearRangeSelector
+          startYear={startYear}
+          endYear={endYear}
+          onStartYearChange={setStartYear}
+          onEndYearChange={setEndYear}
+        />
+        {config.supportsSurfaceOwnership && (
+          <SurfaceOwnershipFilter
+            value={surfaceOwnership}
+            onValueChange={setSurfaceOwnership}
+          />
+        )}
+      </div>
 
       <div className="space-y-4">
         <div className="flex flex-col space-y-2">
