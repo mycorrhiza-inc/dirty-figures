@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { YearRangeSelector } from '@/components/YearRangeSelector';
 
 interface PermitsVsShutdownsData {
   year: string;
@@ -25,6 +26,8 @@ interface PermitsVsShutdownsChartProps {
 export function PermitsVsShutdownsChart({ selectedCounties }: PermitsVsShutdownsChartProps) {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startYear, setStartYear] = useState('1996');
+  const [endYear, setEndYear] = useState(new Date().getFullYear().toString());
 
   useEffect(() => {
     fetch('/api/permits-vs-shutdowns')
@@ -48,10 +51,11 @@ export function PermitsVsShutdownsChart({ selectedCounties }: PermitsVsShutdowns
           yearlyData[item.year].total_shutdown_weighted += item.shutdown_percentage * item.total_permits;
         });
 
-        // Ensure we have data for all years from 1995 to current year
-        const currentYear = new Date().getFullYear();
+        // Filter data based on selected year range
+        const startYearInt = parseInt(startYear);
+        const endYearInt = parseInt(endYear);
         const allYearsData: { [year: string]: { total_permits: number; shutdown_count: number; total_shutdown_weighted: number } } = {};
-        for (let year = 1995; year <= currentYear; year++) {
+        for (let year = startYearInt; year <= endYearInt; year++) {
           const yearStr = year.toString();
           allYearsData[yearStr] = yearlyData[yearStr] || { total_permits: 0, shutdown_count: 0, total_shutdown_weighted: 0 };
         }
@@ -80,15 +84,24 @@ export function PermitsVsShutdownsChart({ selectedCounties }: PermitsVsShutdowns
         console.error('Error fetching permits vs shutdowns data:', error);
         setLoading(false);
       });
-  }, [selectedCounties]);
+  }, [selectedCounties, startYear, endYear]);
 
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
   }
 
   return (
-    <div style={{ width: '100%', height: '400px' }}>
-      <ResponsiveContainer>
+    <div className="w-full space-y-4">
+      {/* Year Range Selectors */}
+      <YearRangeSelector
+        startYear={startYear}
+        endYear={endYear}
+        onStartYearChange={setStartYear}
+        onEndYearChange={setEndYear}
+      />
+
+      <div style={{ width: '100%', height: '400px' }}>
+        <ResponsiveContainer>
         <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="year" />
@@ -124,7 +137,8 @@ export function PermitsVsShutdownsChart({ selectedCounties }: PermitsVsShutdowns
             name="Shutdown Percentage"
           />
         </ComposedChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
