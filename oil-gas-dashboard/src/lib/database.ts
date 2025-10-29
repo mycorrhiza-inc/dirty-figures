@@ -60,6 +60,31 @@ export interface GasProductionByYearData {
   well_count: number;
 }
 
+export interface PermitAnalysisData {
+  permit_date: string;
+  operator: string;
+  permit_count: number;
+  total_oil_production: number;
+  total_gas_production: number;
+  well_count: number;
+}
+
+export interface TopProducerData {
+  operator: string;
+  permit_count: number;
+  total_oil_production: number;
+  total_gas_production: number;
+  permit_dates: string[];
+}
+
+export interface StateLandPermitData {
+  permit_year: string;
+  permit_count: number;
+  total_oil_production: number;
+  total_gas_production: number;
+  county: string;
+}
+
 export function getPermitsByYear(): PermitsByYearData[] {
   const database = getDatabase();
   const query = `
@@ -220,4 +245,71 @@ export function fillMissingYears<T extends { year: string }>(
   }
 
   return filledData;
+}
+
+// Get permits issued since a specific date with detailed production info
+export function getPermitsSinceDate(since: string): PermitAnalysisData[] {
+  const database = getDatabase();
+  const query = `
+    SELECT
+      apd.date_approved as permit_date,
+      apd.operator,
+      COUNT(*) as permit_count,
+      COALESCE(SUM(w.cumulative_oil_barrels), 0) as total_oil_production,
+      COALESCE(SUM(w.cumulative_natural_gas_mcf), 0) as total_gas_production,
+      COUNT(w.api_well_number) as well_count
+    FROM application_for_permit_drilling_granted apd
+    LEFT JOIN wells w ON apd.api_number = w.api_well_number
+    WHERE apd.date_approved >= ?
+    GROUP BY apd.date_approved, apd.operator
+    ORDER BY apd.date_approved DESC, total_oil_production DESC
+  `;
+
+  return database.prepare(query).all(since) as PermitAnalysisData[];
+}
+
+// Get top N producers for a specific time period
+export function getTopProducers(since: string, limit: number = 5): TopProducerData[] {
+  const database = getDatabase();
+  const query = `
+    SELECT
+      apd.operator,
+      COUNT(DISTINCT apd.api_number) as permit_count,
+      COALESCE(SUM(w.cumulative_oil_barrels), 0) as total_oil_production,
+      COALESCE(SUM(w.cumulative_natural_gas_mcf), 0) as total_gas_production,
+      GROUP_CONCAT(DISTINCT DATE(apd.date_approved)) as permit_dates
+    FROM application_for_permit_drilling_granted apd
+    LEFT JOIN wells w ON apd.api_number = w.api_well_number
+    WHERE apd.date_approved >= ?
+    GROUP BY apd.operator
+    ORDER BY total_oil_production DESC, total_gas_production DESC
+    LIMIT ?
+  `;
+
+  const results = database.prepare(query).all(since, limit) as (TopProducerData & { permit_dates: string })[];
+  return results.map(row => ({
+    ...row,
+    permit_dates: row.permit_dates ? row.permit_dates.split(',') : []
+  }));
+}
+
+// Get permits on state land with production data
+export function getStateLandPermits(): StateLandPermitData[] {
+  const database = getDatabase();
+  const query = `
+    SELECT
+      STRFTIME('%Y', apd.date_approved) as permit_year,
+      COUNT(DISTINCT apd.api_number) as permit_count,
+      COALESCE(SUM(w.cumulative_oil_barrels), 0) as total_oil_production,
+      COALESCE(SUM(w.cumulative_natural_gas_mcf), 0) as total_gas_production,
+      w.county
+    FROM application_for_permit_drilling_granted apd
+    LEFT JOIN wells w ON apd.api_number = w.api_well_number
+    WHERE w.surface_ownership = 'State'
+    AND apd.date_approved IS NOT NULL
+    GROUP BY STRFTIME('%Y', apd.date_approved), w.county
+    ORDER BY permit_year DESC
+  `;
+
+  return database.prepare(query).all() as StateLandPermitData[];
 }

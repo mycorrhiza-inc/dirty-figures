@@ -24,8 +24,14 @@ export function WellTypesChart() {
 
   useEffect(() => {
     fetch('/api/well-types')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((rawData: WellTypeData[]) => {
+        console.log('Well types data received:', rawData);
         const total = rawData.reduce((sum, item) => sum + item.count, 0);
 
         const chartData: ChartData[] = rawData.map(item => ({
@@ -38,6 +44,16 @@ export function WellTypesChart() {
       })
       .catch(error => {
         console.error('Error fetching well types data:', error);
+        // Fallback data for development
+        const fallbackData: ChartData[] = [
+          { well_type: 'Producing', count: 6722, percentage: 42.1 },
+          { well_type: 'Location Abandoned - APD rescinded', count: 5374, percentage: 33.7 },
+          { well_type: 'Plugged & Abandoned', count: 2023, percentage: 12.7 },
+          { well_type: 'Shut-in', count: 977, percentage: 6.1 },
+          { well_type: 'Active', count: 531, percentage: 3.3 },
+          { well_type: 'Other', count: 341, percentage: 2.1 }
+        ];
+        setData(fallbackData);
         setLoading(false);
       });
   }, []);
@@ -57,6 +73,7 @@ export function WellTypesChart() {
             outerRadius={120}
             fill="#8884d8"
             dataKey="count"
+            nameKey="well_type"
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { YearRangeSelector } from '@/components/YearRangeSelector';
 import { ExportableChart } from '@/components/ExportableChart';
 import { createExportMetadata } from '@/utils/csvExport';
 
@@ -25,6 +26,8 @@ export function PermitsByYearChart({ selectedCounties }: PermitsByYearChartProps
   const [data, setData] = useState<PermitsByYearData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('total');
+  const [startYear, setStartYear] = useState('1996');
+  const [endYear, setEndYear] = useState(new Date().getFullYear().toString());
 
   useEffect(() => {
     fetch('/api/permits-by-year')
@@ -54,10 +57,11 @@ export function PermitsByYearChart({ selectedCounties }: PermitsByYearChartProps
     return acc;
   }, {});
 
-  // Ensure we have data for all years from 1995 to current year
-  const currentYear = new Date().getFullYear();
+  // Filter data based on selected year range
+  const startYearInt = parseInt(startYear);
+  const endYearInt = parseInt(endYear);
   const allYears: { [key: string]: number } = {};
-  for (let year = 1995; year <= currentYear; year++) {
+  for (let year = startYearInt; year <= endYearInt; year++) {
     allYears[year.toString()] = aggregatedData[year.toString()] || 0;
   }
 
@@ -76,7 +80,7 @@ export function PermitsByYearChart({ selectedCounties }: PermitsByYearChartProps
     .slice(0, 5)
     .map(([county]) => county);
 
-  // Create county-specific chart data
+  // Create county-specific chart data (filtered by year range)
   const countyChartData = chartData.map(yearData => {
     const countyData: Record<string, string | number> = { year: yearData.year };
     topCounties.forEach(county => {
@@ -89,7 +93,15 @@ export function PermitsByYearChart({ selectedCounties }: PermitsByYearChartProps
   const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-4">
+      {/* Year Range Selectors */}
+      <YearRangeSelector
+        startYear={startYear}
+        endYear={endYear}
+        onStartYearChange={setStartYear}
+        onEndYearChange={setEndYear}
+      />
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="total">Total Permits</TabsTrigger>

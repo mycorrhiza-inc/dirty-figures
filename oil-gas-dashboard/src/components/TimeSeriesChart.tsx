@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { YearRangeSelector } from '@/components/YearRangeSelector';
 import { ExportableChart } from '@/components/ExportableChart';
 import { createExportMetadata } from '@/utils/csvExport';
 
@@ -59,6 +60,8 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
   const [calculationMethod, setCalculationMethod] = useState<CalculationMethod>('permit_year');
   const [halfLife, setHalfLife] = useState(2);
   const [activeTab, setActiveTab] = useState('total');
+  const [startYear, setStartYear] = useState('1996');
+  const [endYear, setEndYear] = useState(new Date().getFullYear().toString());
 
   useEffect(() => {
     fetch(config.apiEndpoint)
@@ -145,9 +148,11 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
     return acc;
   }, {});
 
-  // Ensure we have data for all years from 1995 to current
+  // Filter data based on selected year range
+  const startYearInt = parseInt(startYear);
+  const endYearInt = parseInt(endYear);
   const allYears: { [key: string]: number } = {};
-  for (let year = 1995; year <= getCurrentYear(); year++) {
+  for (let year = startYearInt; year <= endYearInt; year++) {
     allYears[year.toString()] = aggregatedData[year.toString()] || 0;
   }
 
@@ -193,8 +198,16 @@ export function TimeSeriesChart({ selectedCounties, config }: TimeSeriesChartPro
   };
 
   return (
-    <div className="w-full">
-      <div className="mb-6 space-y-4">
+    <div className="w-full space-y-4">
+      {/* Year Range Selectors */}
+      <YearRangeSelector
+        startYear={startYear}
+        endYear={endYear}
+        onStartYearChange={setStartYear}
+        onEndYearChange={setEndYear}
+      />
+
+      <div className="space-y-4">
         <div className="flex flex-col space-y-2">
           <Label htmlFor="calculation-method">Calculation Method</Label>
           <Select value={calculationMethod} onValueChange={(value: CalculationMethod) => setCalculationMethod(value)}>
